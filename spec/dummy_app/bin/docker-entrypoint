@@ -2,7 +2,7 @@
 
 # If running the rails server then create or migrate existing database
 if [ "${*}" == "./bin/rails server" ]; then
-  ./bin/rails db:create db:migrate db:seed
+  ./bin/rails db:setup
 fi
 
 exec "${@}"

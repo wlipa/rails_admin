@@ -1,8 +1,8 @@
 # syntax = docker/dockerfile:1
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version and Gemfile
-ARG RUBY_VERSION=3.1.2
-FROM ruby:$RUBY_VERSION-slim as base
+ARG RUBY_VERSION=3.2
+FROM ruby:$RUBY_VERSION-slim AS base
 
 LABEL fly_launch_runtime="rails"
 
@@ -30,28 +30,26 @@ RUN apt-get update -qq && \
 #     rm -rf /tmp/node-build-master
 
 # Throw-away build stage to reduce size of final image
-FROM base as build
+FROM base AS build
 
 # Install packages needed to build gems and node modules
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential default-libmysqlclient-dev git libpq-dev libvips node-gyp pkg-config python-is-python3
+    apt-get install --no-install-recommends -y build-essential default-libmysqlclient-dev git libpq-dev libvips libyaml-dev node-gyp pkg-config python-is-python3
 
 # Build options
 ENV PATH="/usr/local/node/bin:$PATH"
 
-# Install application gems
-COPY --link Gemfile ./
-RUN sed -i "s/, path: '..\/..\/'//" Gemfile
+# Copy application code
+COPY --link . .
+
+# Install application gems. Using Rails 7 for now, as 8 seems to consume more memory.
+RUN sed -i "s/, path: '..\/..\/'//" Gemfile && sed -i "s/'rails', '>= 7.0.0'/'rails', '~> 7.0'/" Gemfile
 RUN bundle install && \
     rm -rf ~/.bundle/ $BUNDLE_PATH/ruby/*/cache $BUNDLE_PATH/ruby/*/bundler/gems/*/.git
 
 # Install node modules
 # COPY --link package.json ./
 # RUN npm install
-
-# Copy application code
-COPY --link . .
-RUN sed -i "s/, path: '..\/..\/'//" Gemfile
 
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
 RUN sed -i "/link_tree ..\/..\/..\//d" app/assets/config/manifest.js

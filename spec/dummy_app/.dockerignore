@@ -3,8 +3,9 @@
 # Ignore git directory.
 /.git/
 
-# Ignore bundler config.
+# Ignore bundler config and Gemfile.lock.
 /.bundle
+/Gemfile.lock
 
 # Ignore all default key files.
 /config/master.key
